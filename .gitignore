@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+**/node_modules/
+.pnpm-store/
+
+# Environment Variables & Secrets (Keep .env.example)
+# .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# **/.env
+# !**/.env.example
+
+# Build Outputs & Bundles
+dist/
+**/dist/
+build/
+**/build/
+out/
+.next/
+
+# Logs & Debugging
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
+**/logs/
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE & Editor Configurations
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary & Cache Files
+.eslintcache
+.stylelintcache
+.cache/
+tmp/
+temp/
+scratch/
