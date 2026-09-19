@@ -7,6 +7,24 @@ const DEFAULT_ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  { urls: 'stun:stun.services.mozilla.com' },
+  { urls: 'stun:stun.relay.metered.ca:80' },
+  {
+    urls: 'turn:global.relay.metered.ca:80',
+    username: 'e01235b2e3f53cbefbe9bcfb',
+    credential: 'J+b30A90P4g8G5M+',
+  },
+  {
+    urls: 'turn:global.relay.metered.ca:443',
+    username: 'e01235b2e3f53cbefbe9bcfb',
+    credential: 'J+b30A90P4g8G5M+',
+  },
+  {
+    urls: 'turn:global.relay.metered.ca:443?transport=tcp',
+    username: 'e01235b2e3f53cbefbe9bcfb',
+    credential: 'J+b30A90P4g8G5M+',
+  },
 ];
 
 export class WebRTCManager {
@@ -56,19 +74,21 @@ export class WebRTCManager {
     // Handle remote stream tracks
     this.remoteStream = new MediaStream();
     this.peerConnection.ontrack = (event) => {
-      console.log('📡 WebRTC remote track received:', event.track?.kind);
+      console.log('📡 WebRTC remote track received:', event.track?.kind, event.track?.id);
+
       if (event.streams && event.streams[0]) {
-        event.streams[0].getTracks().forEach((track) => {
-          if (!this.remoteStream.getTracks().some((t) => t.id === track.id)) {
-            this.remoteStream.addTrack(track);
-          }
-        });
+        this.remoteStream = event.streams[0];
       } else if (event.track) {
         if (!this.remoteStream.getTracks().some((t) => t.id === event.track.id)) {
           this.remoteStream.addTrack(event.track);
         }
       }
-      this.onRemoteStream(new MediaStream(this.remoteStream.getTracks()));
+
+      // Ensure all remote audio & video tracks are explicitly enabled
+      this.remoteStream.getAudioTracks().forEach((t) => { t.enabled = true; });
+      this.remoteStream.getVideoTracks().forEach((t) => { t.enabled = true; });
+
+      this.onRemoteStream(this.remoteStream);
     };
 
     // Handle ICE candidates
@@ -226,19 +246,25 @@ export class WebRTCManager {
       this.callType = 'voice';
     }
 
+    const audioConstraints = {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    };
+
     try {
       if (callType === 'video') {
         try {
-          // Primary Attempt: Simple boolean video constraint (works on 100% desktop webcams)
+          // Primary Attempt: Video + Audio with echo cancellation
           this.localStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
+            audio: audioConstraints,
             video: true,
           });
           this.permissionStatus = 'granted';
         } catch (boolErr) {
           // Fallback 1a: Try with facingMode constraint for mobile cameras
           this.localStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
+            audio: audioConstraints,
             video: { facingMode: this.facingMode },
           });
           this.permissionStatus = 'granted';
@@ -253,7 +279,7 @@ export class WebRTCManager {
       try {
         // Fallback 2: Audio-only stream
         this.localStream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
+          audio: audioConstraints,
           video: false,
         });
         this.callType = 'voice';

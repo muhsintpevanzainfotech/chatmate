@@ -22,17 +22,26 @@ export const CallScreen = () => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
 
+  const hasRemoteVideo = remoteStream && remoteStream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live');
+
   // Attach local stream to local video element
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
+      localVideoRef.current.muted = true;
+      localVideoRef.current.play().catch(() => {});
     }
   }, [localStream]);
 
-  // Attach remote stream to remote video element
+  // Attach remote stream to remote video/audio element
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.volume = 1.0;
+      remoteVideoRef.current.muted = false;
+      remoteVideoRef.current.play().catch((err) => {
+        console.warn('Remote media play warning:', err);
+      });
     }
   }, [remoteStream]);
 
@@ -60,7 +69,7 @@ export const CallScreen = () => {
             className="w-full h-full object-cover"
           />
           {/* Fallback if remote video track disabled or connecting */}
-          {(!remoteStream || remoteStream.getVideoTracks().length === 0) && (
+          {!hasRemoteVideo && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 text-center p-4">
               <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-rose-600 to-pink-500 p-1 shadow-2xl mb-4 animate-pulse">
                 <div className="w-full h-full rounded-full bg-[#0a0d14] flex items-center justify-center text-4xl font-extrabold text-white">
@@ -78,7 +87,7 @@ export const CallScreen = () => {
       ) : (
         /* Voice Call Audio Visualizer View */
         <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#0a0d14] via-[#121824] to-[#0a0d14] flex flex-col items-center justify-center p-6 text-center">
-          <audio ref={remoteVideoRef} autoPlay />
+          <audio ref={remoteVideoRef} autoPlay playsInline />
           <div className="relative mb-6">
             <div className="absolute -inset-6 rounded-full bg-rose-500/20 blur-xl animate-pulse-slow" />
             <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-rose-600 via-pink-500 to-amber-500 p-1 shadow-2xl shadow-rose-500/30">

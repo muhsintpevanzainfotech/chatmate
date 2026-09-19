@@ -63,6 +63,7 @@ export const MatchPage = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
+  const hasRemoteVideo = remoteStream && remoteStream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live');
 
   // Permission & Layout States
   const [permissionStatus, setPermissionStatus] = useState('unknown'); // 'unknown' | 'granted' | 'denied' | 'audio-only' | 'text-only'
@@ -167,6 +168,7 @@ export const MatchPage = () => {
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
+      localVideoRef.current.muted = true;
       localVideoRef.current.play().catch(() => {});
     }
   }, [localStream, isVideoOff, layoutMode]);
@@ -174,7 +176,11 @@ export const MatchPage = () => {
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
-      remoteVideoRef.current.play().catch(() => {});
+      remoteVideoRef.current.volume = 1.0;
+      remoteVideoRef.current.muted = false;
+      remoteVideoRef.current.play().catch((err) => {
+        console.warn('Remote video playback warning:', err);
+      });
     }
   }, [remoteStream, layoutMode]);
 
@@ -562,12 +568,12 @@ export const MatchPage = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-3 h-[calc(100vh-5rem)] flex flex-col justify-between">
+    <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-2 md:py-3 min-h-[calc(100dvh-4.5rem)] md:h-[calc(100vh-5rem)] flex flex-col justify-between mb-16 md:mb-0">
       
-      <div className="glass-panel rounded-3xl border border-slate-800 h-full flex flex-col md:flex-row overflow-hidden shadow-2xl">
+      <div className="glass-panel rounded-2xl md:rounded-3xl border border-slate-800 flex-1 flex flex-col md:flex-row overflow-hidden shadow-2xl min-h-0">
         
         {/* Left / Top Pane: WebRTC Dual Video Feeds */}
-        <div className="relative flex-1 bg-slate-950 flex flex-col justify-between overflow-hidden min-h-[340px] md:min-h-0">
+        <div className="relative flex-1 bg-slate-950 flex flex-col justify-between overflow-hidden min-h-[240px] sm:min-h-[320px] md:min-h-0">
           
           {/* Top Status & Layout Bar */}
           <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 pointer-events-none">
@@ -613,7 +619,7 @@ export const MatchPage = () => {
           {/* DUAL VIDEO LAYOUT RENDERING */}
           {layoutMode === 'split' ? (
             /* SPLIT SCREEN MODE: 50% Partner, 50% You */
-            <div className="w-full h-full grid grid-cols-1 md:grid-cols-2 gap-1 bg-slate-950 p-1 pt-12">
+            <div className="w-full h-full grid grid-cols-1 sm:grid-cols-2 gap-1 bg-slate-950 p-1 pt-12 min-h-0">
               
               {/* Box 1: Partner Video */}
               <div className="relative w-full h-full min-h-[160px] rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center">
@@ -625,7 +631,7 @@ export const MatchPage = () => {
                 />
 
                 {/* Partner Video Fallback Overlay */}
-                {(!remoteStream || remoteStream.getVideoTracks().length === 0) && (
+                {!hasRemoteVideo && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 text-center p-4">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-rose-600 to-pink-500 p-1 shadow-xl mb-2 animate-pulse">
                       <div className="w-full h-full rounded-full bg-[#0a0d14] flex items-center justify-center text-2xl font-extrabold text-white">
@@ -692,7 +698,7 @@ export const MatchPage = () => {
               />
 
               {/* Partner Video Fallback */}
-              {(!remoteStream || remoteStream.getVideoTracks().length === 0) && (
+              {!hasRemoteVideo && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 text-center p-4">
                   <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-rose-600 to-pink-500 p-1 shadow-2xl mb-3 animate-pulse">
                     <div className="w-full h-full rounded-full bg-[#0a0d14] flex items-center justify-center text-3xl font-extrabold text-white">
@@ -736,7 +742,7 @@ export const MatchPage = () => {
         </div>
 
         {/* Right / Bottom Pane: Text Chat Pane */}
-        <div className="w-full md:w-96 bg-[#0a0d14]/90 border-t md:border-t-0 md:border-l border-slate-800 flex flex-col h-64 md:h-full">
+        <div className="w-full md:w-80 lg:w-96 bg-[#0a0d14]/95 border-t md:border-t-0 md:border-l border-slate-800 flex flex-col h-48 sm:h-56 md:h-full shrink-0 min-h-0">
           
           {/* Chat Header */}
           <div className="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
@@ -815,63 +821,63 @@ export const MatchPage = () => {
       </div>
 
       {/* Main Bottom Omegle Toolbar */}
-      <div className="mt-3 flex items-center justify-center gap-3 sm:gap-4 bg-slate-900/90 backdrop-blur-xl px-4 py-3 rounded-2xl border border-slate-800 shadow-2xl">
+      <div className="mt-2 md:mt-3 flex items-center justify-evenly sm:justify-center gap-1.5 sm:gap-4 bg-slate-900/95 backdrop-blur-xl px-2.5 sm:px-4 py-2 sm:py-3 rounded-2xl border border-slate-800 shadow-2xl shrink-0 flex-wrap sm:flex-nowrap">
         {/* Mute Mic */}
         <button
           onClick={toggleMute}
-          className={`p-3 rounded-xl border transition-all ${
+          className={`p-2.5 sm:p-3 rounded-xl border transition-all flex-shrink-0 ${
             isMuted ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'bg-slate-800 text-slate-300 hover:text-white'
           }`}
           title="Toggle Mic"
         >
-          {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+          {isMuted ? <MicOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Mic className="w-4 h-4 sm:w-5 sm:h-5" />}
         </button>
 
         {/* Camera Toggle */}
         <button
           onClick={toggleVideo}
-          className={`p-3 rounded-xl border transition-all ${
+          className={`p-2.5 sm:p-3 rounded-xl border transition-all flex-shrink-0 ${
             isVideoOff ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'bg-slate-800 text-slate-300 hover:text-white'
           }`}
           title="Toggle Camera"
         >
-          {isVideoOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+          {isVideoOff ? <VideoOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Video className="w-4 h-4 sm:w-5 sm:h-5" />}
         </button>
 
         {/* Flip Camera */}
         <button
           onClick={switchCamera}
-          className="p-3 rounded-xl bg-slate-800 text-slate-300 hover:text-white transition-all"
+          className="p-2.5 sm:p-3 rounded-xl bg-slate-800 text-slate-300 hover:text-white transition-all flex-shrink-0"
           title="Flip Camera"
         >
-          <RefreshCw className="w-5 h-5" />
+          <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
         {/* PRIMARY HIGHLIGHT: ⏭️ NEXT BUTTON */}
         <button
           onClick={handleNext}
-          className="px-6 py-3 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 hover:from-rose-500 hover:to-pink-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-rose-600/30 flex items-center gap-2 transform active:scale-95 transition-all"
+          className="px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 hover:from-rose-500 hover:to-pink-500 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg shadow-rose-600/30 flex items-center gap-1.5 sm:gap-2 transform active:scale-95 transition-all flex-shrink-0"
         >
-          <SkipForward className="w-5 h-5" />
+          <SkipForward className="w-4 h-4 sm:w-5 sm:h-5" />
           <span>NEXT</span>
         </button>
 
         {/* Block */}
         <button
           onClick={() => setShowBlockModal(true)}
-          className="p-3 rounded-xl bg-slate-800 text-slate-400 hover:text-rose-400 transition-all"
+          className="p-2.5 sm:p-3 rounded-xl bg-slate-800 text-slate-400 hover:text-rose-400 transition-all flex-shrink-0"
           title="Block User"
         >
-          <Ban className="w-5 h-5" />
+          <Ban className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
         {/* Report */}
         <button
           onClick={() => setShowReportModal(true)}
-          className="p-3 rounded-xl bg-slate-800 text-slate-400 hover:text-amber-400 transition-all"
+          className="p-2.5 sm:p-3 rounded-xl bg-slate-800 text-slate-400 hover:text-amber-400 transition-all flex-shrink-0"
           title="Report User"
         >
-          <Flag className="w-5 h-5" />
+          <Flag className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
 
