@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 7001,
       host: true,
+      allowedHosts: true, // Allow all hosts including *.onrender.com
       proxy: {
         '/api': {
           target: targetBackend,
@@ -49,6 +50,11 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
+    },
+    preview: {
+      port: 7001,
+      host: true,
+      allowedHosts: true,
     },
   };
 });
