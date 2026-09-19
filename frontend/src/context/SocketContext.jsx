@@ -31,7 +31,8 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    const socketInstance = io(window.location.origin, {
+    const socketTarget = import.meta.env.VITE_SOCKET_URL || window.location.origin;
+    const socketInstance = io(socketTarget, {
       auth: { token },
       transports: ['websocket', 'polling'],
     });
